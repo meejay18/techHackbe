@@ -150,12 +150,25 @@ const verifyUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 const otpExpiresAt = Number(user.otpExpiresAt);
                 const expiresDate = new Date(Date.now() * 60 * 1000);
                 if (parseInt(`${expiresDate.getHours()}:${expiresDate.getMinutes()}:${expiresDate.getSeconds()}`) > otpExpiresAt) {
+                    const user = yield userModel_1.default.findByIdAndUpdate(userID, {
+                        verifiedToken: "",
+                        isVerified: true,
+                    }, { new: true });
+                    return res.status(201).json({
+                        message: "verification successfull",
+                        status: 201,
+                        data: user,
+                    });
                 }
                 else {
+                    return res.status(404).json({
+                        message: "otp expired",
+                        status: 404,
+                    });
                 }
             }
             else {
-                return res.status(400).json({ message: "Invalid or expired OTP." });
+                return res.status(400).json({ message: "Invalid otp" });
             }
         }
         else {
