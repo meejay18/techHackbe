@@ -157,10 +157,27 @@ export const verifyUser = async (
             `${expiresDate.getHours()}:${expiresDate.getMinutes()}:${expiresDate.getSeconds()}`
           ) > otpExpiresAt
         ) {
+          const user = await userModel.findByIdAndUpdate(
+            userID,
+            {
+              verifiedToken: "",
+              isVerified: true,
+            },
+            { new: true }
+          );
+          return res.status(201).json({
+            message: "verification successfull",
+            status: 201,
+            data: user,
+          });
         } else {
+          return res.status(404).json({
+            message: "otp expired",
+            status: 404,
+          });
         }
       } else {
-        return res.status(400).json({ message: "Invalid or expired OTP." });
+        return res.status(400).json({ message: "Invalid otp" });
       }
     } else {
       return res.status(404).json({
