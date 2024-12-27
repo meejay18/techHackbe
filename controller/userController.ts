@@ -144,40 +144,35 @@ export const verifyUser = async (
 ): Promise<Response> => {
   try {
     const { userID } = req.params;
-
-    const { email, otp } = req.body;
-    const user = await userModel.findOne({ email });
+    const { otp } = req.body;
+    const user = await userModel.findById(userID);
     if (user) {
       if (user.otp === otp) {
-        const otpExpiresAt = Number(user.otpExpiresAt);
-        const expiresDate = new Date(Date.now() * 60 * 1000);
+        const otpExpiresAt = new Date(user.otpExpiresAt);
+        const currentDate = new Date();
 
-        if (
-          parseInt(
-            `${expiresDate.getHours()}:${expiresDate.getMinutes()}:${expiresDate.getSeconds()}`
-          ) > otpExpiresAt
-        ) {
-          const user = await userModel.findByIdAndUpdate(
+        if (currentDate > otpExpiresAt) {
+          return res.status(404).json({ message: "OTP expired" });
+        } else {
+          const updatedUser = await userModel.findByIdAndUpdate(
             userID,
             {
               verifiedToken: "",
-              isVerified: true,
+              Verified: true,
+              otp: "",
+              otpExpiresAt: "",
             },
             { new: true }
           );
+
           return res.status(201).json({
-            message: "verification successfull",
+            message: "User account verified successfully",
+            data: updatedUser,
             status: 201,
-            data: user,
-          });
-        } else {
-          return res.status(404).json({
-            message: "otp expired",
-            status: 404,
           });
         }
       } else {
-        return res.status(400).json({ message: "Invalid otp" });
+        return res.status(400).json({ message: "Invalid OTP" });
       }
     } else {
       return res.status(404).json({
@@ -185,12 +180,6 @@ export const verifyUser = async (
         status: 404,
       });
     }
-
-    return res.status(200).json({
-      message: "User verified successfully",
-      status: 200,
-      data: user,
-    });
   } catch (error) {
     return res.status(404).json({
       message: "Error verifying user",
