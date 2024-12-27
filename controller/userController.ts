@@ -229,5 +229,3 @@ export const readAllUsers = async (
     });
   }
 };
-
-// export const updateUserPassword = async(req:Request, res: Response)
