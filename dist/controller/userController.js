@@ -143,32 +143,31 @@ exports.logInUser = logInUser;
 const verifyUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userID } = req.params;
-        const { email, otp } = req.body;
-        const user = yield userModel_1.default.findOne({ email });
+        const { otp } = req.body;
+        const user = yield userModel_1.default.findById(userID);
         if (user) {
             if (user.otp === otp) {
-                const otpExpiresAt = Number(user.otpExpiresAt);
-                const expiresDate = new Date(Date.now() * 60 * 1000);
-                if (parseInt(`${expiresDate.getHours()}:${expiresDate.getMinutes()}:${expiresDate.getSeconds()}`) > otpExpiresAt) {
-                    const user = yield userModel_1.default.findByIdAndUpdate(userID, {
-                        verifiedToken: "",
-                        isVerified: true,
-                    }, { new: true });
-                    return res.status(201).json({
-                        message: "verification successfull",
-                        status: 201,
-                        data: user,
-                    });
+                const otpExpiresAt = new Date(user.otpExpiresAt);
+                const currentDate = new Date();
+                if (currentDate > otpExpiresAt) {
+                    return res.status(404).json({ message: "OTP expired" });
                 }
                 else {
-                    return res.status(404).json({
-                        message: "otp expired",
-                        status: 404,
+                    const updatedUser = yield userModel_1.default.findByIdAndUpdate(userID, {
+                        verifiedToken: "",
+                        Verified: true,
+                        otp: "",
+                        otpExpiresAt: "",
+                    }, { new: true });
+                    return res.status(201).json({
+                        message: "User account verified successfully",
+                        data: updatedUser,
+                        status: 201,
                     });
                 }
             }
             else {
-                return res.status(400).json({ message: "Invalid otp" });
+                return res.status(400).json({ message: "Invalid OTP" });
             }
         }
         else {
@@ -177,11 +176,6 @@ const verifyUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 status: 404,
             });
         }
-        return res.status(200).json({
-            message: "User verified successfully",
-            status: 200,
-            data: user,
-        });
     }
     catch (error) {
         return res.status(404).json({
